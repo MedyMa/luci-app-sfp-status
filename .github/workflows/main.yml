@@ -102,14 +102,17 @@ jobs:
         run: |
           set -eux
           mkdir -p "$SDK_DIR/feeds/luci/applications"
-          ln -s "$GITHUB_WORKSPACE/luci-app-sfp-status" "$SDK_DIR/feeds/luci/applications/luci-app-sfp-status"
+          mkdir -p "$SDK_DIR/package/feeds/luci"
+          ln -sfn "$GITHUB_WORKSPACE/luci-app-sfp-status" "$SDK_DIR/feeds/luci/applications/luci-app-sfp-status"
+          ln -sfn "$SDK_DIR/feeds/luci/applications/luci-app-sfp-status" "$SDK_DIR/package/feeds/luci/luci-app-sfp-status"
+          test -f "$SDK_DIR/package/feeds/luci/luci-app-sfp-status/Makefile"
 
       - name: Install package definitions
         working-directory: ${{ env.SDK_DIR }}
         run: |
           set -eux
           ./scripts/feeds install -p packages ethtool
-          ./scripts/feeds install -p luci luci-base luci-app-sfp-status
+          ./scripts/feeds install -p luci luci-base
 
       - name: Configure SDK
         working-directory: ${{ env.SDK_DIR }}
