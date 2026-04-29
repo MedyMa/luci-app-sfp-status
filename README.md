@@ -1,43 +1,43 @@
 # luci-app-sfp-status
 
-LuCI application for OpenWrt 24.10 that reads SFP DOM telemetry and renders it in two places:
+适用于 OpenWrt 24.10 的 LuCI 应用，用于读取 SFP DOM 遥测信息，并在以下两个位置展示：
 
-- Status > Overview through a native overview include widget.
-- Status > SFP through a dedicated live detail page with settings.
+- 状态 > 概览：通过原生概览页组件展示。
+- 状态 > SFP：通过带设置项的独立实时详情页展示。
 
-## Theme compatibility
+## 主题兼容性
 
-The widget and page use standard LuCI structural classes such as `cbi-section`, `table`, `tr`, `td` and `ifacebadge` so they follow the current LuCI layout model and adapt cleanly to luci-theme-argon without page-specific CSS overrides.
+该组件和页面使用标准 LuCI 结构类，例如 cbi-section、table、tr、td 和 ifacebadge，因此能够遵循当前 LuCI 的布局模型，并在无需页面专用 CSS 覆盖的前提下良好适配 luci-theme-argon。
 
-## Data source
+## 数据来源
 
-The backend reads SFP information from `ethtool`:
+后端通过 ethtool 读取 SFP 信息：
 
-- `ethtool -m <ifname>` for DOM telemetry and inventory.
-- `ethtool <ifname>` for link and speed details.
+- ethtool -m &lt;ifname&gt;：读取 DOM 遥测和模块信息。
+- ethtool &lt;ifname&gt;：读取链路状态和速率信息。
 
-If no interface is configured, the backend auto-detects the first network device that exposes readable SFP DOM data.
+如果未配置接口，后端会自动探测第一个可读取 SFP DOM 数据的网络设备。
 
-## Files
+## 文件说明
 
-- `root/usr/libexec/rpcd/luci.sfp-status`: rpcd backend exposing `luci.sfp-status` ubus methods.
-- `htdocs/luci-static/resources/view/status/include/15_sfp.js`: overview widget.
-- `htdocs/luci-static/resources/view/sfp-status/overview.js`: standalone page.
-- `root/usr/share/rpcd/acl.d/luci-app-sfp-status.json`: LuCI ACL.
-- `root/usr/share/luci/menu.d/luci-app-sfp-status.json`: menu entry.
+- root/usr/libexec/rpcd/luci.sfp-status：rpcd 后端，提供 luci.sfp-status 的 ubus 方法。
+- htdocs/luci-static/resources/view/status/include/15_sfp.js：概览页组件。
+- htdocs/luci-static/resources/view/sfp-status/overview.js：独立状态页。
+- root/usr/share/rpcd/acl.d/luci-app-sfp-status.json：LuCI ACL 权限定义。
+- root/usr/share/luci/menu.d/luci-app-sfp-status.json：菜单入口。
 
-## Build
+## 构建
 
-Place the package directory in a LuCI feed or under `feeds/luci/applications/`, then build it with the usual OpenWrt workflow:
+将该软件包目录放入 LuCI feed，或放到 feeds/luci/applications/ 目录下，然后按常规 OpenWrt 流程进行构建：
 
 ```sh
 make menuconfig
 make package/luci-app-sfp-status/compile V=s
 ```
 
-## Runtime verification
+## 运行验证
 
-After installing the generated ipk:
+安装生成的 ipk 后，执行：
 
 ```sh
 opkg install luci-app-sfp-status_0.1.0-1_all.ipk
@@ -46,7 +46,7 @@ ubus call luci.sfp-status getInterfaces
 ubus call luci.sfp-status getStatus '{}'
 ```
 
-Then open LuCI:
+随后打开 LuCI：
 
-- Go to Status > SFP and confirm the live table updates.
-- Go to Status > Overview and confirm the SFP card is visible and styled correctly under luci-theme-argon.
+- 进入 状态 > SFP，确认实时表格能够正常刷新。
+- 进入 状态 > 概览，确认 SFP 卡片可见，并且在 luci-theme-argon 下样式显示正常。
