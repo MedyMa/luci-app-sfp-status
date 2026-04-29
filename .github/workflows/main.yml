@@ -69,7 +69,8 @@ jobs:
             libncurses5-dev \
             libssl-dev \
             python3 \
-            python3-distutils \
+            python3-pyelftools \
+            python3-setuptools \
             rsync \
             subversion \
             swig \
