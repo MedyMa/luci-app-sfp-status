@@ -28,11 +28,11 @@ on:
     tags:
       - 'v*'
     paths:
-      - '.github/workflows/build-luci-app-sfp-status.yml'
+      - '.github/workflows/main.yml'
       - 'luci-app-sfp-status/**'
   pull_request:
     paths:
-      - '.github/workflows/build-luci-app-sfp-status.yml'
+      - '.github/workflows/main.yml'
       - 'luci-app-sfp-status/**'
 
 permissions:
@@ -101,10 +101,11 @@ jobs:
       - name: Inject package into LuCI feed
         run: |
           set -eux
+          package_src="$GITHUB_WORKSPACE/luci-app-sfp-status"
           mkdir -p "$SDK_DIR/feeds/luci/applications"
           mkdir -p "$SDK_DIR/package/feeds/luci"
-          ln -sfn "$GITHUB_WORKSPACE/luci-app-sfp-status" "$SDK_DIR/feeds/luci/applications/luci-app-sfp-status"
-          ln -sfn "$SDK_DIR/feeds/luci/applications/luci-app-sfp-status" "$SDK_DIR/package/feeds/luci/luci-app-sfp-status"
+          ln -sfn "$package_src" "$SDK_DIR/feeds/luci/applications/luci-app-sfp-status"
+          ln -sfn "$package_src" "$SDK_DIR/package/feeds/luci/luci-app-sfp-status"
           test -f "$SDK_DIR/package/feeds/luci/luci-app-sfp-status/Makefile"
 
       - name: Install package definitions
