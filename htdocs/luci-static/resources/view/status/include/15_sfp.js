@@ -88,6 +88,70 @@ function renderModuleOverview(status) {
 	});
 }
 
+function renderMergedOverview(modules) {
+	const fields = [
+		{ label: 'SFP型号', key: 'module_name' },
+		{ label: _('Temperature'), key: 'temperature' },
+		{ label: 'SFP速度', key: 'speed' },
+		{ label: _('Voltage'), key: 'voltage' },
+		{ label: _('Bias Current'), key: 'bias_current' },
+		{ label: 'RX Power', key: 'rx_power' },
+		{ label: 'TX Power', key: 'tx_power' }
+	];
+
+	const showStatusRow = modules.some(function(module) {
+		return module?.supported === false;
+	});
+
+	const table = E('table', { 'class': 'table' });
+	const headerCells = [
+		E('th', { 'class': 'th left', 'width': '22%' }, [ _('Module') ])
+	];
+
+	for (let index = 0; index < modules.length; index++) {
+		headerCells.push(E('th', { 'class': 'th left' }, [
+			valueOrDash(modules[index]?.module_slot || modules[index]?.interface)
+		]));
+	}
+
+	table.appendChild(E('tr', { 'class': 'tr table-titles' }, headerCells));
+
+	if (showStatusRow) {
+		const statusCells = [
+			E('td', { 'class': 'td left', 'data-title': _('Name') }, [ _('Status') ])
+		];
+
+		for (let index = 0; index < modules.length; index++) {
+			statusCells.push(E('td', { 'class': 'td left', 'data-title': _('Value') }, [
+				valueOrDash(modules[index]?.error || (modules[index]?.supported === false ? _('Unavailable') : 'OK'))
+			]));
+		}
+
+		table.appendChild(E('tr', { 'class': 'tr' }, statusCells));
+	}
+
+	for (let fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
+		const field = fields[fieldIndex];
+		const rowCells = [
+			E('td', {
+				'class': 'td left',
+				'data-title': _('Name')
+			}, [ field.label ])
+		];
+
+		for (let moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
+			rowCells.push(E('td', {
+				'class': 'td left',
+				'data-title': _('Value')
+			}, [ valueOrDash(modules[moduleIndex]?.[field.key]) ]));
+		}
+
+		table.appendChild(E('tr', { 'class': 'tr' }, rowCells));
+	}
+
+	return table;
+}
+
 function renderOverview(reply) {
 	const modules = Array.isArray(reply?.modules) ? reply.modules : [];
 
@@ -97,11 +161,7 @@ function renderOverview(reply) {
 	if (modules.length === 1)
 		return renderModuleOverview(modules[0]);
 
-	return E('div', {}, modules.map(function(module, index) {
-		return E('div', {
-			'style': index < modules.length - 1 ? 'margin-bottom: 1rem' : ''
-		}, [ renderModuleOverview(module) ]);
-	}));
+	return renderMergedOverview(modules);
 }
 
 function loadStatuses(interfaceName, timeoutMs) {

@@ -83,7 +83,7 @@ git push origin v0.1.0
 安装生成的 ipk 后，执行：
 
 ```sh
-opkg install luci-app-sfp-status_0.1.0-r11_all.ipk
+opkg install luci-app-sfp-status_0.1.0-r12_all.ipk
 ubus -v list luci.sfp-status
 ubus call luci.sfp-status getStatuses '{}'
 ```
