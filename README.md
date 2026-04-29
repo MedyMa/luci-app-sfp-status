@@ -32,19 +32,19 @@
 
 ```sh
 make menuconfig
-make package/luci-app-sfp-status/compile V=s
+make package/feeds/luci/luci-app-sfp-status/compile V=s
 ```
 
 ## GitHub Actions 编译
 
-仓库已包含 GitHub Actions 工作流 [build-luci-app-sfp-status.yml](../.github/workflows/build-luci-app-sfp-status.yml)，可用于自动编译此插件。
+仓库已包含 GitHub Actions 工作流 [main.yml](../.github/workflows/main.yml)，可用于自动编译此插件。
 
 工作流做的事情如下：
 
 - 默认下载适用于 ARMv8 设备的 OpenWrt 24.10.0 官方 SDK（mediatek/filogic）。
-- 将当前仓库中的 luci-app-sfp-status 挂载到 SDK 的 feeds/luci/applications/ 目录。
-- 安装 luci-base、ethtool 和本插件的软件包定义。
-- 运行 make package/luci-app-sfp-status/compile 生成 ipk。
+- 将当前仓库中的 luci-app-sfp-status 挂载到 SDK 的 feeds/luci/applications/ 目录，并显式注册到 package/feeds/luci。
+- 安装 luci-base 和 ethtool 的软件包定义。
+- 运行 make package/feeds/luci/luci-app-sfp-status/compile 生成 ipk。
 - 将生成的 ipk 作为 GitHub Actions artifact 上传。
 - 在版本 tag 构建成功后，自动把 ipk 发布到 GitHub Releases。
 
