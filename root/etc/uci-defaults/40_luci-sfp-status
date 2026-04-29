@@ -1,4 +1,6 @@
 #!/bin/sh
+rm -f /usr/share/luci/menu.d/luci-app-sfp-status.json
+rm -f /www/luci-static/resources/view/sfp-status/overview.js
 rm -rf /var/luci-modulecache/
 rm -f /var/luci-indexcache.*
 [ -x /etc/init.d/rpcd ] && /etc/init.d/rpcd reload
