@@ -21,7 +21,7 @@ on:
         default: false
         type: boolean
       release_tag:
-        description: Release tag to use when publishing from workflow_dispatch (for example: v0.1.0)
+        description: 'Release tag to use when publishing from workflow_dispatch (for example: v0.1.0)'
         required: false
         default: ''
   push:
