@@ -10,6 +10,8 @@ const callGetStatuses = rpc.declare({
 	expect: {}
 });
 
+let lastSuccessfulReply = null;
+
 function valueOrDash(value) {
 	if (value == null)
 		return '-';
@@ -89,67 +91,11 @@ function renderModuleOverview(status) {
 }
 
 function renderMergedOverview(modules) {
-	const fields = [
-		{ label: 'SFP型号', key: 'module_name' },
-		{ label: _('Temperature'), key: 'temperature' },
-		{ label: 'SFP速度', key: 'speed' },
-		{ label: _('Voltage'), key: 'voltage' },
-		{ label: _('Bias Current'), key: 'bias_current' },
-		{ label: 'RX Power', key: 'rx_power' },
-		{ label: 'TX Power', key: 'tx_power' }
-	];
-
-	const showStatusRow = modules.some(function(module) {
-		return module?.supported === false;
-	});
-
-	const table = E('table', { 'class': 'table' });
-	const headerCells = [
-		E('th', { 'class': 'th left', 'width': '22%' }, [ _('Module') ])
-	];
-
-	for (let index = 0; index < modules.length; index++) {
-		headerCells.push(E('th', { 'class': 'th left' }, [
-			valueOrDash(modules[index]?.module_slot || modules[index]?.interface)
-		]));
-	}
-
-	table.appendChild(E('tr', { 'class': 'tr table-titles' }, headerCells));
-
-	if (showStatusRow) {
-		const statusCells = [
-			E('td', { 'class': 'td left', 'data-title': _('Name') }, [ _('Status') ])
-		];
-
-		for (let index = 0; index < modules.length; index++) {
-			statusCells.push(E('td', { 'class': 'td left', 'data-title': _('Value') }, [
-				valueOrDash(modules[index]?.error || (modules[index]?.supported === false ? _('Unavailable') : 'OK'))
-			]));
-		}
-
-		table.appendChild(E('tr', { 'class': 'tr' }, statusCells));
-	}
-
-	for (let fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
-		const field = fields[fieldIndex];
-		const rowCells = [
-			E('td', {
-				'class': 'td left',
-				'data-title': _('Name')
-			}, [ field.label ])
-		];
-
-		for (let moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
-			rowCells.push(E('td', {
-				'class': 'td left',
-				'data-title': _('Value')
-			}, [ valueOrDash(modules[moduleIndex]?.[field.key]) ]));
-		}
-
-		table.appendChild(E('tr', { 'class': 'tr' }, rowCells));
-	}
-
-	return table;
+	return E('div', {
+		'style': 'display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:1rem;align-items:start;'
+	}, modules.map(function(module) {
+		return E('div', {}, [ renderModuleOverview(module) ]);
+	}));
 }
 
 function renderOverview(reply) {
@@ -180,8 +126,8 @@ function loadStatuses(interfaceName, timeoutMs) {
 				return;
 
 			settled = true;
-			resolve(fallback);
-		}, timeoutMs > 0 ? timeoutMs : 1500);
+			resolve(lastSuccessfulReply || fallback);
+		}, timeoutMs > 0 ? timeoutMs : 6000);
 
 		Promise.resolve(callGetStatuses(interfaceName)).then(function(status) {
 			if (settled)
@@ -189,6 +135,10 @@ function loadStatuses(interfaceName, timeoutMs) {
 
 			settled = true;
 			window.clearTimeout(timer);
+
+			if (Array.isArray(status?.modules) && status.modules.length)
+				lastSuccessfulReply = status;
+
 			resolve(status || fallback);
 		}).catch(function() {
 			if (settled)
@@ -196,7 +146,7 @@ function loadStatuses(interfaceName, timeoutMs) {
 
 			settled = true;
 			window.clearTimeout(timer);
-			resolve(fallback);
+			resolve(lastSuccessfulReply || fallback);
 		});
 	});
 }
