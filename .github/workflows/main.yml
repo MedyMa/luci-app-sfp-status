@@ -101,7 +101,16 @@ jobs:
       - name: Inject package into LuCI feed
         run: |
           set -eux
-          package_src="$GITHUB_WORKSPACE/luci-app-sfp-status"
+          if [ -f "$GITHUB_WORKSPACE/luci-app-sfp-status/Makefile" ]; then
+            package_src="$GITHUB_WORKSPACE/luci-app-sfp-status"
+          elif [ -f "$GITHUB_WORKSPACE/Makefile" ]; then
+            package_src="$GITHUB_WORKSPACE"
+          else
+            echo "Unable to locate luci-app-sfp-status Makefile in workspace" >&2
+            echo "Checked: $GITHUB_WORKSPACE/luci-app-sfp-status/Makefile and $GITHUB_WORKSPACE/Makefile" >&2
+            exit 1
+          fi
+
           mkdir -p "$SDK_DIR/feeds/luci/applications"
           mkdir -p "$SDK_DIR/package/feeds/luci"
           ln -sfn "$package_src" "$SDK_DIR/feeds/luci/applications/luci-app-sfp-status"
