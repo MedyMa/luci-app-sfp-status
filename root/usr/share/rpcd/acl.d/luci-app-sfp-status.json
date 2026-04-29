@@ -8,7 +8,8 @@
       "ubus": {
         "luci.sfp-status": [
           "getInterfaces",
-          "getStatus"
+          "getStatus",
+          "getStatuses"
         ]
       }
     },

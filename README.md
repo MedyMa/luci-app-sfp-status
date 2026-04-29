@@ -1,6 +1,6 @@
 # luci-app-sfp-status
 
-适用于 OpenWrt 24.10 的 LuCI 应用，用于读取 SFP DOM 遥测信息，并在状态 > 概览中通过原生概览页组件展示。
+适用于 OpenWrt 24.10 的 LuCI 应用，用于读取一个或多个 SFP 模块的 DOM 遥测信息，并在状态 > 概览中通过原生概览页组件展示。
 
 ## 主题兼容性
 
@@ -13,7 +13,7 @@
 - ethtool -m &lt;ifname&gt;：读取 DOM 遥测和模块信息。
 - ethtool &lt;ifname&gt;：读取链路状态和速率信息。
 
-如果未配置接口，后端会自动探测第一个可读取 SFP DOM 数据的网络设备。
+如果未配置接口，后端会自动探测所有可读取 SFP DOM 数据的网络设备，并在概览页逐个展示。
 
 ## 文件说明
 
@@ -83,14 +83,15 @@ git push origin v0.1.0
 安装生成的 ipk 后，执行：
 
 ```sh
-opkg install luci-app-sfp-status_0.1.0-r6_all.ipk
+opkg install luci-app-sfp-status_0.1.0-r8_all.ipk
 ubus -v list luci.sfp-status
 ubus call luci.sfp-status getInterfaces
 ubus call luci.sfp-status getStatus '{}'
+ubus call luci.sfp-status getStatuses '{}'
 ```
 
 随后打开 LuCI：
 
 - 升级后，状态 菜单中不再显示独立的 SFP 页面入口。
 - 如果浏览器之前打开过旧版页面，先做一次强制刷新，避免继续使用缓存的旧 JS。
-- 进入 状态 > 概览，确认 SFP 卡片可见，并且在 luci-theme-argon 下样式显示正常。
+- 进入 状态 > 概览，确认每个检测到的 SFP 模块都会单独展示，并且在 luci-theme-argon 下样式显示正常。

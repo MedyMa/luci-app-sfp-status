@@ -10,6 +10,13 @@ const callGetStatus = rpc.declare({
 	expect: {}
 });
 
+const callGetStatuses = rpc.declare({
+	object: 'luci.sfp-status',
+	method: 'getStatuses',
+	params: [ 'interface' ],
+	expect: {}
+});
+
 function valueOrDash(value) {
 	if (value == null)
 		return '-';
@@ -69,7 +76,7 @@ function renderUnavailable(status) {
 	], status || {});
 }
 
-function renderOverview(status) {
+function renderModuleOverview(status) {
 	if (!status || status.supported === false)
 		return renderUnavailable(status);
 
@@ -89,9 +96,28 @@ function renderOverview(status) {
 	});
 }
 
-function loadStatus(interfaceName, timeoutMs) {
+function renderOverview(reply) {
+	const modules = Array.isArray(reply?.modules) ? reply.modules : [];
+
+	if (!modules.length)
+		return renderUnavailable(reply);
+
+	if (modules.length === 1)
+		return renderModuleOverview(modules[0]);
+
+	return E('div', {}, modules.map(function(module, index) {
+		return E('div', {
+			'style': index < modules.length - 1 ? 'margin-bottom: 1rem' : ''
+		}, [ renderModuleOverview(module) ]);
+	}));
+}
+
+function loadStatuses(interfaceName, timeoutMs) {
 	const fallback = {
 		supported: false,
+		configured_interface: interfaceName || '',
+		interfaces: [],
+		modules: [],
 		interface: interfaceName || '',
 		error: _('Unavailable')
 	};
@@ -106,7 +132,7 @@ function loadStatus(interfaceName, timeoutMs) {
 			resolve(fallback);
 		}, timeoutMs > 0 ? timeoutMs : 1500);
 
-		Promise.resolve(callGetStatus(interfaceName)).then(function(status) {
+		Promise.resolve(callGetStatuses(interfaceName)).then(function(status) {
 			if (settled)
 				return;
 
@@ -130,7 +156,7 @@ return baseclass.extend({
 	load() {
 		return Promise.all([
 			L.resolveDefault(uci.load('sfp-status'), null),
-			L.resolveDefault(loadStatus(''), {})
+			L.resolveDefault(loadStatuses(''), {})
 		]);
 	},
 
