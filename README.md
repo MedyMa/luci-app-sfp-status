@@ -35,6 +35,54 @@ make menuconfig
 make package/luci-app-sfp-status/compile V=s
 ```
 
+## GitHub Actions 编译
+
+仓库已包含 GitHub Actions 工作流 [build-luci-app-sfp-status.yml](../.github/workflows/build-luci-app-sfp-status.yml)，可用于自动编译此插件。
+
+工作流做的事情如下：
+
+- 默认下载适用于 ARMv8 设备的 OpenWrt 24.10.0 官方 SDK（mediatek/filogic）。
+- 将当前仓库中的 luci-app-sfp-status 挂载到 SDK 的 feeds/luci/applications/ 目录。
+- 安装 luci-base、ethtool 和本插件的软件包定义。
+- 运行 make package/luci-app-sfp-status/compile 生成 ipk。
+- 将生成的 ipk 作为 GitHub Actions artifact 上传。
+- 在版本 tag 构建成功后，自动把 ipk 发布到 GitHub Releases。
+
+使用方式：
+
+1. 将仓库推送到 GitHub。
+2. 打开仓库的 Actions 页面。
+3. 选择 Build luci-app-sfp-status 工作流。
+4. 点击 Run workflow 手动执行，默认会使用 mediatek/filogic 这个 ARMv8 目标；如有需要，也可以在运行前改成其他 target/subtarget。
+5. 在本次运行的 Artifacts 中下载生成的 ipk 文件。
+
+自动发布 Release 的方式：
+
+- 在本地创建版本 tag，例如：
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+- GitHub Actions 会先编译插件。
+- 编译成功后，工作流会自动创建或更新同名 GitHub Release。
+- 生成的 ipk 会自动上传到该 Release 附件中。
+
+手动发布 Release 的方式：
+
+1. 打开 Actions 页面并运行 Build luci-app-sfp-status。
+2. 将 publish_release 设为 true。
+3. 填写 release_tag，例如 v0.1.0。
+4. 工作流会在编译成功后自动发布到对应的 GitHub Release。
+
+说明：
+
+- 该包在 Makefile 中声明为 all 架构，因此即使工作流默认使用 ARMv8 的 mediatek/filogic SDK 进行打包，生成的安装包仍然是 all.ipk。
+- 现在默认目标已经改为 ARMv8 场景；如果你的设备是其他 ARMv8 平台，可以在手动运行工作流时把 target/subtarget 改成对应值。
+- 如果后续需要严格跟随某个 OpenWrt 24.10 小版本，也可以在手动运行工作流时修改 openwrt_version，或直接调整工作流默认值。
+- Release 流程默认只会在版本 tag 或手动勾选 publish_release 时触发，普通提交仍然只编译并上传 artifact，不会污染 Releases 页面。
+
 ## 运行验证
 
 安装生成的 ipk 后，执行：
