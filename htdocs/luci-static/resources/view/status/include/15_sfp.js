@@ -73,9 +73,9 @@ function renderModuleOverview(status) {
 		return renderUnavailable(status);
 
 	return buildTable([
-		{ label: _('SFP Name'), key: 'module_name' },
+		{ label: 'SFP型号', key: 'module_name' },
 		{ label: _('Temperature'), key: 'temperature' },
-		{ label: _('SFP Speed'), key: 'speed' },
+		{ label: 'SFP速度', key: 'speed' },
 		{ label: _('Voltage'), key: 'voltage' },
 		{ label: _('Bias Current'), key: 'bias_current' },
 		{ label: 'RX Power', key: 'rx_power' },

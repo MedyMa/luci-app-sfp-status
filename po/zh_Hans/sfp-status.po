@@ -23,7 +23,7 @@ msgstr "模块"
 
 #: htdocs/luci-static/resources/view/status/include/15_sfp.js
 msgid "SFP Name"
-msgstr "SFP名称"
+msgstr "SFP型号"
 
 #: htdocs/luci-static/resources/view/status/include/15_sfp.js
 msgid "Temperature"
