@@ -1,5 +1,6 @@
 'use strict';
 'require rpc';
+'require baseclass';
 
 const callGetInterfaces = rpc.declare({
 	object: 'luci.sfp-status',
@@ -135,9 +136,10 @@ function renderDetails(status) {
 	], status);
 }
 
-return {
+return baseclass.extend({
+	__name__: 'sfp-status.common',
 	callGetInterfaces: callGetInterfaces,
 	callGetStatus: callGetStatus,
 	renderOverview: renderOverview,
 	renderDetails: renderDetails
-};
+});
