@@ -24,31 +24,35 @@ function normalizeContent(content) {
 	return Array.isArray(content) ? content : [ content ];
 }
 
-function renderFieldRow(label, content, isLast) {
-	return E('div', {
-		'class': isLast ? 'cbi-value cbi-value-last' : 'cbi-value'
-	}, [
-		E('label', { 'class': 'cbi-value-title' }, normalizeContent(label)),
-		E('div', { 'class': 'cbi-value-field' }, normalizeContent(content))
-	]);
-}
-
-function buildCard(fields, status, options) {
-	const rows = [];
+function buildTable(fields, status, options) {
+	const table = E('table', { 'class': 'table' });
 	const header = options && options.header;
 
-	if (header)
-		rows.push(renderFieldRow(header.label, header.value, fields.length === 0));
+	if (header) {
+		table.appendChild(E('tr', { 'class': 'tr table-titles' }, [
+			E('th', { 'class': 'th left', 'width': '33%' }, normalizeContent(header.label)),
+			E('th', { 'class': 'th left' }, normalizeContent(header.value))
+		]));
+	}
 
 	for (let index = 0; index < fields.length; index++) {
 		const field = fields[index];
 		const content = field.render ? field.render(status) : valueOrDash(status?.[field.key]);
-		const isLast = index === fields.length - 1;
 
-		rows.push(renderFieldRow(field.label, content, isLast));
+		table.appendChild(E('tr', { 'class': 'tr' }, [
+			E('td', {
+				'class': 'td left',
+				'width': '24%',
+				'data-title': field.dataTitle || _('Name')
+			}, [ field.label ]),
+			E('td', {
+				'class': 'td left',
+				'data-title': field.valueTitle || _('Value')
+			}, normalizeContent(content))
+		]));
 	}
 
-	return E('div', { 'class': 'cbi-section-node' }, rows);
+	return table;
 }
 
 function renderInterfaceBadge(value) {
@@ -56,7 +60,7 @@ function renderInterfaceBadge(value) {
 }
 
 function renderUnavailable(status) {
-	return buildCard([
+	return buildTable([
 		{ label: _('Status'), render: function() { return valueOrDash(status?.error || _('Unavailable')); } },
 		{ label: _('Interface'), render: function() { return renderInterfaceBadge(status?.interface); } },
 		{ label: _('Available Interfaces'), render: function() {
@@ -70,7 +74,7 @@ function renderModuleOverview(status, sampledAt) {
 	if (!status || status.supported === false)
 		return renderUnavailable(status);
 
-	return buildCard([
+	return buildTable([
 		{ label: 'SFP型号', key: 'module_name' },
 		{ label: _('Temperature'), key: 'temperature' },
 		{ label: 'SFP速度', key: 'speed' },
@@ -81,20 +85,54 @@ function renderModuleOverview(status, sampledAt) {
 	], status, {
 		header: {
 			label: _('Module'),
-			value: sampledAt ? [
-				renderInterfaceBadge(status.module_slot || status.interface),
-				E('div', { 'class': 'cbi-value-description' }, [ '采样时间: ' + valueOrDash(sampledAt) ])
-			] : renderInterfaceBadge(status.module_slot || status.interface)
+			value: renderInterfaceBadge(status.module_slot || status.interface)
 		}
 	});
 }
 
 function renderMergedOverview(modules, sampledAt) {
-	return E('div', {
-		'style': 'display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;align-items:start;'
-	}, modules.map(function(module) {
-		return E('div', {}, [ renderModuleOverview(module, sampledAt) ]);
-	}));
+	const fields = [
+		{ label: 'SFP型号', key: 'module_name' },
+		{ label: _('Temperature'), key: 'temperature' },
+		{ label: 'SFP速度', key: 'speed' },
+		{ label: _('Voltage'), key: 'voltage' },
+		{ label: _('Bias Current'), key: 'bias_current' },
+		{ label: 'RX Power', key: 'rx_power' },
+		{ label: 'TX Power', key: 'tx_power' }
+	];
+	const table = E('table', { 'class': 'table' });
+	const headerCells = [
+		E('th', { 'class': 'th left', 'width': '24%' }, [ _('Module') ])
+	];
+
+	for (let index = 0; index < modules.length; index++) {
+		headerCells.push(E('th', { 'class': 'th left' }, [
+			valueOrDash(modules[index]?.module_slot || modules[index]?.interface)
+		]));
+	}
+
+	table.appendChild(E('tr', { 'class': 'tr table-titles' }, headerCells));
+
+	for (let fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
+		const field = fields[fieldIndex];
+		const rowCells = [
+			E('td', {
+				'class': 'td left',
+				'data-title': _('Name')
+			}, [ field.label ])
+		];
+
+		for (let moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
+			rowCells.push(E('td', {
+				'class': 'td left',
+				'data-title': _('Value')
+			}, [ valueOrDash(modules[moduleIndex]?.[field.key]) ]));
+		}
+
+		table.appendChild(E('tr', { 'class': 'tr' }, rowCells));
+	}
+
+	return table;
 }
 
 function renderOverview(reply) {

@@ -4,7 +4,7 @@
 
 ## 主题兼容性
 
-该组件和页面使用标准 LuCI 结构类，例如 cbi-section-node、cbi-value、cbi-value-title、cbi-value-field 和 ifacebadge，因此能够遵循当前 LuCI 的布局模型，并在无需页面专用 CSS 覆盖的前提下良好适配 luci-theme-argon。
+该组件和页面使用标准 LuCI 结构类，例如 cbi-section、table、tr、td 和 ifacebadge，因此能够遵循当前 LuCI 的布局模型，并在无需页面专用 CSS 覆盖的前提下良好适配 luci-theme-argon。
 
 ## 数据来源
 
@@ -83,7 +83,7 @@ git push origin v0.1.0
 安装生成的 ipk 后，执行：
 
 ```sh
-opkg install luci-app-sfp-status_0.1.0-r16_all.ipk
+opkg install luci-app-sfp-status_0.1.0-r17_all.ipk
 ubus -v list luci.sfp-status
 ubus call luci.sfp-status getStatuses '{}'
 ```
