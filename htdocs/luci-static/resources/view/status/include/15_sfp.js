@@ -3,13 +3,6 @@
 'require rpc';
 'require uci';
 
-const callGetStatus = rpc.declare({
-	object: 'luci.sfp-status',
-	method: 'getStatus',
-	params: [ 'interface' ],
-	expect: {}
-});
-
 const callGetStatuses = rpc.declare({
 	object: 'luci.sfp-status',
 	method: 'getStatuses',
@@ -67,7 +60,6 @@ function renderInterfaceBadge(value) {
 function renderUnavailable(status) {
 	return buildTable([
 		{ label: _('Status'), render: function() { return valueOrDash(status?.error || _('Unavailable')); } },
-		{ label: _('Configured Interface'), render: function() { return renderInterfaceBadge(status?.configured_interface); } },
 		{ label: _('Interface'), render: function() { return renderInterfaceBadge(status?.interface); } },
 		{ label: _('Available Interfaces'), render: function() {
 			const interfaces = Array.isArray(status?.interfaces) ? status.interfaces : [];
@@ -86,8 +78,8 @@ function renderModuleOverview(status) {
 		{ label: _('SFP Speed'), key: 'speed' },
 		{ label: _('Voltage'), key: 'voltage' },
 		{ label: _('Bias Current'), key: 'bias_current' },
-		{ label: _('RX Power'), key: 'rx_power' },
-		{ label: _('TX Power'), key: 'tx_power' }
+		{ label: 'RX Power', key: 'rx_power' },
+		{ label: 'TX Power', key: 'tx_power' }
 	], status, {
 		header: {
 			label: _('Module'),
@@ -115,7 +107,6 @@ function renderOverview(reply) {
 function loadStatuses(interfaceName, timeoutMs) {
 	const fallback = {
 		supported: false,
-		configured_interface: interfaceName || '',
 		interfaces: [],
 		modules: [],
 		interface: interfaceName || '',

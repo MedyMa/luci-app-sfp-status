@@ -17,10 +17,6 @@ list_interfaces() {
 	done
 }
 
-uci_get() {
-	uci -q get "${CONFIG_NAME}.settings.$1"
-}
-
 read_field() {
 	printf '%s\n' "$1" | awk -v label="$2" '
 		{
@@ -76,12 +72,10 @@ module_slot_for_interface() {
 
 json_add_unsupported_status() {
 	local interface="$1"
-	local configured_interface="$2"
-	local speed="$3"
-	local error="$4"
+	local speed="$2"
+	local error="$3"
 
 	json_add_boolean supported 0
-	[ -n "$configured_interface" ] && json_add_string configured_interface "$configured_interface"
 	[ -n "$interface" ] && json_add_string interface "$interface"
 	[ -n "$interface" ] && json_add_string module_slot "$(module_slot_for_interface "$interface")"
 	[ -n "$speed" ] && json_add_string speed "$speed"
@@ -90,11 +84,10 @@ json_add_unsupported_status() {
 
 json_add_supported_status() {
 	local interface="$1"
-	local configured_interface="$2"
-	local auto_detected="$3"
-	local dom_dump="$4"
-	local link_dump="$5"
-	local speed="$6"
+	local auto_detected="$2"
+	local dom_dump="$3"
+	local link_dump="$4"
+	local speed="$5"
 	local identifier vendor_name vendor_part vendor_revision serial wavelength
 	local temperature voltage bias_current rx_power tx_power duplex port link_detected
 	local module_name module_slot
@@ -123,7 +116,6 @@ json_add_supported_status() {
 	json_add_boolean supported 1
 	json_add_boolean auto_detected "$auto_detected"
 	json_add_boolean link_up "$([ "$link_detected" = 'yes' ] && echo 1 || echo 0)"
-	json_add_string configured_interface "$configured_interface"
 	json_add_string interface "$interface"
 	json_add_string module_slot "$module_slot"
 	json_add_string module_name "$module_name"
@@ -169,20 +161,17 @@ json_add_interfaces() {
 get_interfaces() {
 	json_init
 	json_add_interfaces
-	json_add_string configured_interface "$(uci_get interface)"
 	json_dump
 	json_cleanup
 }
 
 get_status() {
 	local requested_interface="$1"
-	local configured_interface interface auto_detected dom_dump link_dump speed
+	local interface auto_detected dom_dump link_dump speed
 
-	configured_interface="$(uci_get interface)"
 	interface="$requested_interface"
 	auto_detected=0
 
-	[ -z "$interface" ] && interface="$configured_interface"
 	if [ -n "$interface" ] && ! is_valid_interface "$interface"; then
 		interface=''
 	fi
@@ -194,7 +183,6 @@ get_status() {
 
 	json_init
 	json_add_interfaces
-	json_add_string configured_interface "$configured_interface"
 
 	if [ ! -x "$ETHTOOL_BIN" ]; then
 		json_add_boolean supported 0
@@ -217,34 +205,31 @@ get_status() {
 	speed="$(get_speed "$interface")"
 
 	if ! is_dom_capable_dump "$dom_dump"; then
-		json_add_unsupported_status "$interface" "$configured_interface" "$speed" 'SFP DOM data is not available on the selected interface.'
+		json_add_unsupported_status "$interface" "$speed" 'SFP DOM data is not available on the selected interface.'
 		json_dump
 		json_cleanup
 		return 0
 	fi
 
-	json_add_supported_status "$interface" "$configured_interface" "$auto_detected" "$dom_dump" "$link_dump" "$speed"
+	json_add_supported_status "$interface" "$auto_detected" "$dom_dump" "$link_dump" "$speed"
 	json_dump
 	json_cleanup
 }
 
 get_statuses() {
 	local requested_interface="$1"
-	local configured_interface interface auto_detected dom_dump link_dump speed has_modules
+	local interface auto_detected dom_dump link_dump speed has_modules
 
-	configured_interface="$(uci_get interface)"
 	interface="$requested_interface"
 	auto_detected=0
 	has_modules=0
 
-	[ -z "$interface" ] && interface="$configured_interface"
 	if [ -n "$interface" ] && ! is_valid_interface "$interface"; then
 		interface=''
 	fi
 
 	json_init
 	json_add_interfaces
-	json_add_string configured_interface "$configured_interface"
 
 	if [ ! -x "$ETHTOOL_BIN" ]; then
 		json_add_array modules
@@ -265,10 +250,10 @@ get_statuses() {
 
 		json_add_object ''
 		if is_dom_capable_dump "$dom_dump"; then
-			json_add_supported_status "$interface" "$configured_interface" 0 "$dom_dump" "$link_dump" "$speed"
+			json_add_supported_status "$interface" 0 "$dom_dump" "$link_dump" "$speed"
 			has_modules=1
 		else
-			json_add_unsupported_status "$interface" "$configured_interface" "$speed" 'SFP DOM data is not available on the selected interface.'
+			json_add_unsupported_status "$interface" "$speed" 'SFP DOM data is not available on the selected interface.'
 		fi
 		json_close_object
 	else
@@ -282,7 +267,7 @@ get_statuses() {
 			speed="$(get_speed "$interface")"
 
 			json_add_object ''
-			json_add_supported_status "$interface" "$configured_interface" 1 "$dom_dump" "$link_dump" "$speed"
+			json_add_supported_status "$interface" 1 "$dom_dump" "$link_dump" "$speed"
 			json_close_object
 			has_modules=1
 			auto_detected=1
@@ -293,7 +278,7 @@ get_statuses() {
 	json_add_boolean supported "$has_modules"
 	json_add_boolean auto_detected "$auto_detected"
 
-	if [ "$has_modules" != "1" ] && [ -z "$requested_interface$configured_interface" ]; then
+	if [ "$has_modules" != "1" ] && [ -z "$requested_interface" ]; then
 		json_add_string error 'No SFP DOM capable interface was detected.'
 	fi
 

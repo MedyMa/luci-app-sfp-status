@@ -19,7 +19,7 @@
 
 - root/usr/libexec/rpcd/luci.sfp-status：rpcd 后端，提供 luci.sfp-status 的 ubus 方法。
 - htdocs/luci-static/resources/view/status/include/15_sfp.js：概览页组件。
-- root/usr/share/rpcd/acl.d/luci-app-sfp-status.json：LuCI ACL 权限定义。
+- root/usr/share/rpcd/acl.d/luci-app-sfp-status.json：LuCI ACL 只读权限定义。
 
 ## 构建
 
@@ -83,10 +83,8 @@ git push origin v0.1.0
 安装生成的 ipk 后，执行：
 
 ```sh
-opkg install luci-app-sfp-status_0.1.0-r8_all.ipk
+opkg install luci-app-sfp-status_0.1.0-r10_all.ipk
 ubus -v list luci.sfp-status
-ubus call luci.sfp-status getInterfaces
-ubus call luci.sfp-status getStatus '{}'
 ubus call luci.sfp-status getStatuses '{}'
 ```
 

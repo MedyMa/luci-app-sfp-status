@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-sfp-status
 PKG_VERSION:=0.1.0
-PKG_RELEASE:=8
+PKG_RELEASE:=10
 PKG_LICENSE:=Apache-2.0
 PKG_MAINTAINER:=GitHub Copilot
 
@@ -25,6 +25,8 @@ endef
 define Package/$(PKG_NAME)/postinst
 #!/bin/sh
 if [ -z "$$IPKG_INSTROOT" ]; then
+	uci -q delete sfp-status.settings.interface
+	uci -q commit sfp-status
 	rm -f /usr/share/luci/menu.d/luci-app-sfp-status.json
 	rm -f /www/luci-static/resources/view/sfp-status/overview.js
 	rm -f /www/luci-static/resources/sfp-status/common.js

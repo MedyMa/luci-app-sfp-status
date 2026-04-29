@@ -1,6 +1,6 @@
 {
   "luci-app-sfp-status": {
-    "description": "Grant UCI and RPC access to LuCI app SFP status",
+    "description": "Grant UCI read and RPC access to LuCI app SFP status",
     "read": {
       "uci": [
         "sfp-status"
@@ -12,11 +12,6 @@
           "getStatuses"
         ]
       }
-    },
-    "write": {
-      "uci": [
-        "sfp-status"
-      ]
     }
   }
 }
