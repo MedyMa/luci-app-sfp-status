@@ -96,7 +96,7 @@ jobs:
         working-directory: ${{ env.SDK_DIR }}
         run: |
           set -eux
-          ./scripts/feeds update packages luci
+          ./scripts/feeds update -a
 
       - name: Inject package into LuCI feed
         run: |
@@ -132,7 +132,7 @@ jobs:
         working-directory: ${{ env.SDK_DIR }}
         run: |
           set -eux
-          ./scripts/feeds install -p luci luci-base
+          ./scripts/feeds install -a
 
       - name: Configure SDK
         working-directory: ${{ env.SDK_DIR }}
