@@ -1,0 +1,15 @@
+{
+  "admin/status/sfp-status": {
+    "title": "SFP",
+    "order": 15,
+    "action": {
+      "type": "view",
+      "path": "sfp-status/overview"
+    },
+    "depends": {
+      "acl": [
+        "luci-app-sfp-status"
+      ]
+    }
+  }
+}
