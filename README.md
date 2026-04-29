@@ -83,7 +83,7 @@ git push origin v0.1.0
 安装生成的 ipk 后，执行：
 
 ```sh
-opkg install luci-app-sfp-status_0.1.0-r4_all.ipk
+opkg install luci-app-sfp-status_0.1.0-r6_all.ipk
 ubus -v list luci.sfp-status
 ubus call luci.sfp-status getInterfaces
 ubus call luci.sfp-status getStatus '{}'
@@ -92,4 +92,5 @@ ubus call luci.sfp-status getStatus '{}'
 随后打开 LuCI：
 
 - 升级后，状态 菜单中不再显示独立的 SFP 页面入口。
+- 如果浏览器之前打开过旧版页面，先做一次强制刷新，避免继续使用缓存的旧 JS。
 - 进入 状态 > 概览，确认 SFP 卡片可见，并且在 luci-theme-argon 下样式显示正常。
