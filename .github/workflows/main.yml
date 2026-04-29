@@ -122,7 +122,7 @@ jobs:
         working-directory: ${{ env.SDK_DIR }}
         run: |
           set -eux
-          make package/luci-app-sfp-status/compile -j"$(nproc)" V=s
+          make package/feeds/luci/luci-app-sfp-status/compile -j"$(nproc)" V=s
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
