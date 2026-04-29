@@ -1,0 +1,181 @@
+name: Build luci-app-sfp-status
+
+on:
+  workflow_dispatch:
+    inputs:
+      openwrt_version:
+        description: OpenWrt release version
+        required: false
+        default: '24.10.0'
+      openwrt_target:
+        description: OpenWrt target
+        required: false
+        default: 'mediatek'
+      openwrt_subtarget:
+        description: OpenWrt subtarget
+        required: false
+        default: 'filogic'
+      publish_release:
+        description: Publish the built ipk to GitHub Releases
+        required: false
+        default: false
+        type: boolean
+      release_tag:
+        description: Release tag to use when publishing from workflow_dispatch (for example: v0.1.0)
+        required: false
+        default: ''
+  push:
+    tags:
+      - 'v*'
+    paths:
+      - '.github/workflows/build-luci-app-sfp-status.yml'
+      - 'luci-app-sfp-status/**'
+  pull_request:
+    paths:
+      - '.github/workflows/build-luci-app-sfp-status.yml'
+      - 'luci-app-sfp-status/**'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      OPENWRT_VERSION: ${{ inputs.openwrt_version || '24.10.0' }}
+      OPENWRT_TARGET: ${{ inputs.openwrt_target || 'mediatek' }}
+      OPENWRT_SUBTARGET: ${{ inputs.openwrt_subtarget || 'filogic' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            clang \
+            curl \
+            file \
+            flex \
+            bison \
+            g++ \
+            gawk \
+            gcc-multilib \
+            gettext \
+            git \
+            libncurses5-dev \
+            libssl-dev \
+            python3 \
+            python3-distutils \
+            rsync \
+            subversion \
+            swig \
+            unzip \
+            wget \
+            zlib1g-dev \
+            zstd
+
+      - name: Download OpenWrt SDK
+        run: |
+          set -eux
+          sdk_base_url="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${OPENWRT_TARGET}/${OPENWRT_SUBTARGET}"
+          sdk_target_id="${OPENWRT_TARGET}-${OPENWRT_SUBTARGET}"
+          sdk_file="$(curl -fsSL "$sdk_base_url/" | grep -oE "openwrt-sdk-${OPENWRT_VERSION}-${sdk_target_id}_[^\"[:space:]]+\.tar\.zst" | head -n1)"
+          test -n "$sdk_file"
+          wget -q "$sdk_base_url/$sdk_file" -O openwrt-sdk.tar.zst
+          tar --zstd -xf openwrt-sdk.tar.zst
+          sdk_dir="$(find . -maxdepth 1 -type d -name 'openwrt-sdk-*' | head -n1)"
+          test -n "$sdk_dir"
+          echo "SDK_DIR=$sdk_dir" >> "$GITHUB_ENV"
+
+      - name: Update feeds
+        working-directory: ${{ env.SDK_DIR }}
+        run: |
+          set -eux
+          ./scripts/feeds update packages luci
+
+      - name: Inject package into LuCI feed
+        run: |
+          set -eux
+          mkdir -p "$SDK_DIR/feeds/luci/applications"
+          ln -s "$GITHUB_WORKSPACE/luci-app-sfp-status" "$SDK_DIR/feeds/luci/applications/luci-app-sfp-status"
+
+      - name: Install package definitions
+        working-directory: ${{ env.SDK_DIR }}
+        run: |
+          set -eux
+          ./scripts/feeds install -p packages ethtool
+          ./scripts/feeds install -p luci luci-base luci-app-sfp-status
+
+      - name: Configure SDK
+        working-directory: ${{ env.SDK_DIR }}
+        run: |
+          set -eux
+          echo 'CONFIG_PACKAGE_luci-app-sfp-status=y' >> .config
+          make defconfig
+
+      - name: Compile package
+        working-directory: ${{ env.SDK_DIR }}
+        run: |
+          set -eux
+          make package/luci-app-sfp-status/compile -j"$(nproc)" V=s
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: luci-app-sfp-status-${{ env.OPENWRT_TARGET }}-${{ env.OPENWRT_SUBTARGET }}-ipk
+          path: |
+            ${{ env.SDK_DIR }}/bin/packages/*/luci/luci-app-sfp-status*.ipk
+            ${{ env.SDK_DIR }}/bin/packages/*/luci/Packages*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.publish_release)
+
+    env:
+      OPENWRT_VERSION: ${{ inputs.openwrt_version || '24.10.0' }}
+      OPENWRT_TARGET: ${{ inputs.openwrt_target || 'mediatek' }}
+      OPENWRT_SUBTARGET: ${{ inputs.openwrt_subtarget || 'filogic' }}
+
+    steps:
+      - name: Determine release metadata
+        id: meta
+        run: |
+          set -eu
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            tag="${{ inputs.release_tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+
+          if [ -z "$tag" ]; then
+            echo "release_tag is required when publishing from workflow_dispatch" >&2
+            exit 1
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "name=luci-app-sfp-status $tag" >> "$GITHUB_OUTPUT"
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: luci-app-sfp-status-${{ env.OPENWRT_TARGET }}-${{ env.OPENWRT_SUBTARGET }}-ipk
+          path: release-assets
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.name }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          files: release-assets/**/*.ipk
+          fail_on_unmatched_files: true
+          body: |
+            OpenWrt SDK: ${{ env.OPENWRT_VERSION }}
+            Target: ${{ env.OPENWRT_TARGET }}/${{ env.OPENWRT_SUBTARGET }}
+            Package architecture: all
