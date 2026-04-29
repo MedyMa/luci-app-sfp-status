@@ -111,17 +111,27 @@ jobs:
             exit 1
           fi
 
+          sdk_feed_dir="$SDK_DIR/feeds/luci/applications/luci-app-sfp-status"
+          sdk_pkg_dir="$SDK_DIR/package/feeds/luci/luci-app-sfp-status"
+
           mkdir -p "$SDK_DIR/feeds/luci/applications"
           mkdir -p "$SDK_DIR/package/feeds/luci"
-          ln -sfn "$package_src" "$SDK_DIR/feeds/luci/applications/luci-app-sfp-status"
-          ln -sfn "$package_src" "$SDK_DIR/package/feeds/luci/luci-app-sfp-status"
-          test -f "$SDK_DIR/package/feeds/luci/luci-app-sfp-status/Makefile"
+          rm -rf "$sdk_feed_dir" "$sdk_pkg_dir"
+
+          rsync -a \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude 'openwrt-sdk-*' \
+            "$package_src/" "$sdk_feed_dir/"
+
+          ln -sfn "../../../feeds/luci/applications/luci-app-sfp-status" "$sdk_pkg_dir"
+          test -f "$sdk_feed_dir/Makefile"
+          test -f "$sdk_pkg_dir/Makefile"
 
       - name: Install package definitions
         working-directory: ${{ env.SDK_DIR }}
         run: |
           set -eux
-          ./scripts/feeds install -p packages ethtool
           ./scripts/feeds install -p luci luci-base
 
       - name: Configure SDK
