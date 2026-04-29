@@ -1,5 +1,4 @@
 #!/bin/sh
-
 # TechRef: https://openwrt.org/docs/techref/rpcd
 
 . "${IPKG_INSTROOT}/usr/share/libubox/jshn.sh"

@@ -9,7 +9,7 @@ return baseclass.extend({
 	load() {
 		return Promise.all([
 			L.resolveDefault(uci.load('sfp-status'), null),
-			L.resolveDefault(sfp.callGetStatus(''), {})
+			L.resolveDefault(sfp.loadStatus(''), {})
 		]);
 	},
 

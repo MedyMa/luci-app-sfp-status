@@ -11,7 +11,7 @@ return view.extend({
 		return Promise.all([
 			L.resolveDefault(uci.load('sfp-status'), null),
 			L.resolveDefault(sfp.callGetInterfaces(), {}),
-			L.resolveDefault(sfp.callGetStatus(''), {})
+			L.resolveDefault(sfp.loadStatus(''), {})
 		]);
 	},
 
@@ -52,7 +52,7 @@ return view.extend({
 
 		poll.add(function() {
 			const configured = uci.get('sfp-status', 'settings', 'interface') || '';
-			return L.resolveDefault(sfp.callGetStatus(configured), {}).then(function(status) {
+			return L.resolveDefault(sfp.loadStatus(configured), {}).then(function(status) {
 				dom.content(statusContainer, sfp.renderDetails(status));
 			});
 		}, 2);

@@ -15,6 +15,41 @@ const callGetStatus = rpc.declare({
 	expect: {}
 });
 
+function loadStatus(interfaceName, timeoutMs) {
+	const fallback = {
+		supported: false,
+		interface: interfaceName || '',
+		error: _('Unavailable')
+	};
+
+	return new Promise(function(resolve) {
+		let settled = false;
+		const timer = window.setTimeout(function() {
+			if (settled)
+				return;
+
+			settled = true;
+			resolve(fallback);
+		}, timeoutMs > 0 ? timeoutMs : 1500);
+
+		Promise.resolve(callGetStatus(interfaceName)).then(function(status) {
+			if (settled)
+				return;
+
+			settled = true;
+			window.clearTimeout(timer);
+			resolve(status || fallback);
+		}).catch(function() {
+			if (settled)
+				return;
+
+			settled = true;
+			window.clearTimeout(timer);
+			resolve(fallback);
+		});
+	});
+}
+
 function valueOrDash(value) {
 	if (value == null)
 		return '-';
@@ -140,6 +175,7 @@ return baseclass.extend({
 	__name__: 'sfp-status.common',
 	callGetInterfaces: callGetInterfaces,
 	callGetStatus: callGetStatus,
+	loadStatus: loadStatus,
 	renderOverview: renderOverview,
 	renderDetails: renderDetails
 });
