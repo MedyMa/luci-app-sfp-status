@@ -24,35 +24,31 @@ function normalizeContent(content) {
 	return Array.isArray(content) ? content : [ content ];
 }
 
-function buildTable(fields, status, options) {
-	const table = E('table', { 'class': 'table' });
+function renderFieldRow(label, content, isLast) {
+	return E('div', {
+		'class': isLast ? 'cbi-value cbi-value-last' : 'cbi-value'
+	}, [
+		E('label', { 'class': 'cbi-value-title' }, normalizeContent(label)),
+		E('div', { 'class': 'cbi-value-field' }, normalizeContent(content))
+	]);
+}
+
+function buildCard(fields, status, options) {
+	const rows = [];
 	const header = options && options.header;
 
-	if (header) {
-		table.appendChild(E('tr', { 'class': 'tr table-titles' }, [
-			E('th', { 'class': 'th left', 'width': '33%' }, normalizeContent(header.label)),
-			E('th', { 'class': 'th left' }, normalizeContent(header.value))
-		]));
-	}
+	if (header)
+		rows.push(renderFieldRow(header.label, header.value, fields.length === 0));
 
 	for (let index = 0; index < fields.length; index++) {
 		const field = fields[index];
 		const content = field.render ? field.render(status) : valueOrDash(status?.[field.key]);
+		const isLast = index === fields.length - 1;
 
-		table.appendChild(E('tr', { 'class': 'tr' }, [
-			E('td', {
-				'class': 'td left',
-				'width': '33%',
-				'data-title': field.dataTitle || _('Name')
-			}, [ field.label ]),
-			E('td', {
-				'class': 'td left',
-				'data-title': field.valueTitle || _('Value')
-			}, normalizeContent(content))
-		]));
+		rows.push(renderFieldRow(field.label, content, isLast));
 	}
 
-	return table;
+	return E('div', { 'class': 'cbi-section-node' }, rows);
 }
 
 function renderInterfaceBadge(value) {
@@ -60,7 +56,7 @@ function renderInterfaceBadge(value) {
 }
 
 function renderUnavailable(status) {
-	return buildTable([
+	return buildCard([
 		{ label: _('Status'), render: function() { return valueOrDash(status?.error || _('Unavailable')); } },
 		{ label: _('Interface'), render: function() { return renderInterfaceBadge(status?.interface); } },
 		{ label: _('Available Interfaces'), render: function() {
@@ -70,11 +66,11 @@ function renderUnavailable(status) {
 	], status || {});
 }
 
-function renderModuleOverview(status) {
+function renderModuleOverview(status, sampledAt) {
 	if (!status || status.supported === false)
 		return renderUnavailable(status);
 
-	return buildTable([
+	return buildCard([
 		{ label: 'SFP型号', key: 'module_name' },
 		{ label: _('Temperature'), key: 'temperature' },
 		{ label: 'SFP速度', key: 'speed' },
@@ -85,16 +81,19 @@ function renderModuleOverview(status) {
 	], status, {
 		header: {
 			label: _('Module'),
-			value: valueOrDash(status.module_slot || status.interface)
+			value: sampledAt ? [
+				renderInterfaceBadge(status.module_slot || status.interface),
+				E('div', { 'class': 'cbi-value-description' }, [ '采样时间: ' + valueOrDash(sampledAt) ])
+			] : renderInterfaceBadge(status.module_slot || status.interface)
 		}
 	});
 }
 
-function renderMergedOverview(modules) {
+function renderMergedOverview(modules, sampledAt) {
 	return E('div', {
-		'style': 'display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:1rem;align-items:start;'
+		'style': 'display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;align-items:start;'
 	}, modules.map(function(module) {
-		return E('div', {}, [ renderModuleOverview(module) ]);
+		return E('div', {}, [ renderModuleOverview(module, sampledAt) ]);
 	}));
 }
 
@@ -105,9 +104,9 @@ function renderOverview(reply) {
 		return renderUnavailable(reply);
 
 	if (modules.length === 1)
-		return renderModuleOverview(modules[0]);
+		return renderModuleOverview(modules[0], reply?.sampled_at);
 
-	return renderMergedOverview(modules);
+	return renderMergedOverview(modules, reply?.sampled_at);
 }
 
 function loadStatuses(interfaceName, timeoutMs) {

@@ -17,6 +17,36 @@ list_interfaces() {
 	done
 }
 
+should_probe_interface() {
+	local iface="$1"
+
+	case "$iface" in
+		''|lo|bonding_masters|br-*|docker*|dummy*|ifb*|teql*|veth*|wg*|wwan*|phy*.*-ap*)
+			return 1
+			;;
+		eth*|lan*|wan*|sfp*)
+			return 0
+			;;
+		*)
+			[ -e "/sys/class/net/$iface/device" ]
+			return $?
+			;;
+	esac
+}
+
+list_probe_interfaces() {
+	local iface
+
+	for iface in $(list_interfaces); do
+		should_probe_interface "$iface" || continue
+		echo "$iface"
+	done
+}
+
+current_timestamp() {
+	date '+%Y-%m-%d %H:%M:%S'
+}
+
 read_field() {
 	printf '%s\n' "$1" | awk -v label="$2" '
 		{
@@ -139,7 +169,7 @@ json_add_supported_status() {
 auto_detect_interface() {
 	local iface dom_dump
 
-	for iface in $(list_interfaces); do
+	for iface in $(list_probe_interfaces); do
 		dom_dump="$($ETHTOOL_BIN -m "$iface" 2>/dev/null)"
 		if is_dom_capable_dump "$dom_dump"; then
 			printf '%s\n' "$iface"
@@ -183,6 +213,7 @@ get_status() {
 
 	json_init
 	json_add_interfaces
+	json_add_string sampled_at "$(current_timestamp)"
 
 	if [ ! -x "$ETHTOOL_BIN" ]; then
 		json_add_boolean supported 0
@@ -230,6 +261,7 @@ get_statuses() {
 
 	json_init
 	json_add_interfaces
+	json_add_string sampled_at "$(current_timestamp)"
 
 	if [ ! -x "$ETHTOOL_BIN" ]; then
 		json_add_array modules
@@ -257,7 +289,7 @@ get_statuses() {
 		fi
 		json_close_object
 	else
-		for interface in $(list_interfaces); do
+		for interface in $(list_probe_interfaces); do
 			dom_dump="$($ETHTOOL_BIN -m "$interface" 2>/dev/null)"
 			if ! is_dom_capable_dump "$dom_dump"; then
 				continue
