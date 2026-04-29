@@ -1,3 +1,0 @@
-config settings 'settings'
-	option interface ''
-	option overview_enabled '1'
